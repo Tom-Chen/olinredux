@@ -9,11 +9,14 @@
 import time
 import random
 from graphics import *
+import cProfile
+import re
+
 
 
 # Tile size of the level
-LEVEL_WIDTH = 50
-LEVEL_HEIGHT = 50
+LEVEL_WIDTH = 42
+LEVEL_HEIGHT = 42
 
 # Tile size of the viewport (through which you view the level)
 VIEWPORT_WIDTH = 21
@@ -26,8 +29,8 @@ TILE_SIZE = 24
 WINDOW_WIDTH = TILE_SIZE * VIEWPORT_WIDTH
 WINDOW_HEIGHT = TILE_SIZE * VIEWPORT_HEIGHT
 
-# Pixel size of the panel on the right where you can display stuff
-WINDOW_RIGHTPANEL = 200
+# # Pixel size of the panel on the right where you can display stuff
+# WINDOW_RIGHTPANEL = 200
 
 
 #############################################################
@@ -127,7 +130,23 @@ class OlinStatue (Thing):
         rect.setOutline("gray")
         self._sprite = rect
 
+# Helpers
+def in_level(x,y):
+    return x >= 0 and y >= 0 and x < LEVEL_WIDTH and y < LEVEL_HEIGHT
 
+def z_raise (elt):
+    elt.canvas.tag_raise(elt.id)
+ 
+def z_lower (elt):
+    elt.canvas.tag_lower(elt.id)
+    
+MOVE = {
+    'Left': (-1,0),
+    'Right': (1,0),
+    'Up' : (0,-1),
+    'Down' : (0,1)
+}
+        
 #
 # Characters represent persons and animals and things that move
 # about possibly proactively
@@ -142,12 +161,28 @@ class Character (Thing):
         rect.setOutline("red")
         self._sprite = rect
 
+    # A helper method to register the character with the event queue
+    # Call this method with a queue and a time delay before
+    # the event is called
+    # Note that the method returns the object itself, so we can
+    # use method chaining, which is cool (though not as cool as
+    # bowties...)
+    
+    def register (self,q,freq):
+        self._freq = freq
+        q.enqueue(freq,self)
+        return self
+        
     # A character has a move() method that you should implement
     # to enable movement
 
     def move (self,dx,dy):
-        # WRITE ME!
-        pass   
+        tx = self._x + dx
+        ty = self._y + dy
+        if in_level(tx,ty):
+          self._x = tx
+          self._y = ty
+          self._sprite.move(dx*TILE_SIZE,dy*TILE_SIZE)
 
     def is_character (self):
         return True
@@ -172,26 +207,11 @@ class Rat (Character):
         self._sprite = rect
         self._direction = random.randrange(4)
 
-    # A helper method to register the Rat with the event queue
-    # Call this method with a queue and a time delay before
-    # the event is called
-    # Note that the method returns the object itself, so we can
-    # use method chaining, which is cool (though not as cool as
-    # bowties...)
-
-    def register (self,q,freq):
-        self._freq = freq
-        q.enqueue(freq,self)
-        return self
-
     # this gets called from event queue when the time is right
 
     def event (self,q):
-        tx = self._x + dx
-        ty = self._y + dy
-        self._x = tx
-        self._y = ty
-        self._sprite.move(dx*TILE_SIZE,dy*TILE_SIZE)
+        randomDirection = random.choice(MOVE.keys())
+        self.move(MOVE[randomDirection][0],MOVE[randomDirection][1])
         log("event for "+str(self))
         q.enqueue(100,self);
         
@@ -221,10 +241,12 @@ class Player (Character):
     def move (self,dx,dy):
         tx = self._x + dx
         ty = self._y + dy
-        self._x = tx
-        self._y = ty
-        self._sprite.move(dx*TILE_SIZE,dy*TILE_SIZE)
-
+        # log((self._x,self._y))
+        if in_level(tx,ty):
+          self._x = tx
+          self._y = ty
+          return True
+        return False
 
 
 #############################################################
@@ -301,28 +323,41 @@ class Screen (object):
         # and possible record them for future manipulation
         # you'll probably want to change this at some point to
         # get scrolling to work right...
+        self.redraw()
+
+        
+    def redraw(self):
         dx = (VIEWPORT_WIDTH-1)/2
         dy = (VIEWPORT_HEIGHT-1)/2
-        for y in range(cy-dy,cy+dy+1):
-            for x in range(cx-dx,cx+dx+1):
-                sx = (x-(cx-dx)) * TILE_SIZE
-                sy = (y-(cy-dy)) * TILE_SIZE
+        for y in range(self._cy-dy,self._cy+dy+1):
+            for x in range(self._cx-dx,self._cx+dx+1):
+                # log((x,y))
+                sx = (x-(self._cx-dx)) * TILE_SIZE
+                sy = (y-(self._cy-dy)) * TILE_SIZE
                 elt = Rectangle(Point(sx,sy),
                                 Point(sx+TILE_SIZE,sy+TILE_SIZE))
-                if self.tile(x,y) == 0:
+                currentTile = self.tile(x,y)
+                if currentTile == 0:
                     elt.setFill('lightgreen')
                     elt.setOutline('lightgreen')
-                if self.tile(x,y) == 1:
+                if currentTile == 1:
                     elt.setFill('green')
                     elt.setOutline('green')
-                elif self.tile(x,y) == 2:
+                elif currentTile == 2:
                     elt.setFill('sienna')
                     elt.setOutline('sienna')
-                elt.draw(window)
+                elif currentTile == 3:
+                    elt.setFill('black')
+                    elt.setOutline('black')
+                elt.draw(self._window)
 
     # return the tile at a given tile position
     def tile (self,x,y):
-        return self._level.tile(x,y)
+        # log(self._level.tile(x,y))
+        # return self._level.tile(x,y)
+        try: return self._level.tile(x,y)
+        except IndexError:
+          return 3
 
     # add a thing to the screen at a given position
     def add (self,item,x,y):
@@ -389,17 +424,11 @@ class EventQueue (object):
 # A simple event class that checks for user input.
 # It re-enqueues itself after the check.
 
-MOVE = {
-    'Left': (-1,0),
-    'Right': (1,0),
-    'Up' : (0,-1),
-    'Down' : (0,1)
-}
-
 class CheckInput (object):
-    def __init__ (self,window,player):
+    def __init__ (self,window,player,screen):
         self._player = player
         self._window = window
+        self._screen = screen
 
     def event (self,q):
         key = self._window.checkKey()
@@ -408,26 +437,31 @@ class CheckInput (object):
             exit(0)
         if key in MOVE:
             (dx,dy) = MOVE[key]
-            self._player.move(dx,dy)
+            didMove = self._player.move(dx,dy)
+            if(didMove == True):
+              self._screen._cx += dx
+              self._screen._cy += dy
+              self._screen.redraw()
+            z_raise(self._player._sprite)
         q.enqueue(1,self)
 
 
-#
-# Create the right-side panel that can be used to display interesting
-# information to the player
-#
-def create_panel (window):
-    fg = Rectangle(Point(WINDOW_WIDTH+1,-20),
-                   Point(WINDOW_WIDTH+WINDOW_RIGHTPANEL+20,WINDOW_HEIGHT+20))
-    fg.setFill("darkgray")
-    fg.setOutline("darkgray")
-    fg.draw(window)
-    fg = Text(Point(WINDOW_WIDTH+100,
-                    30),"Olinland Redux")
-    fg.setSize(24)
-    fg.setStyle("italic")
-    fg.setFill("red")
-    fg.draw(window)
+# #
+# # Create the right-side panel that can be used to display interesting
+# # information to the player
+# #
+# def create_panel (window):
+    # fg = Rectangle(Point(WINDOW_WIDTH+1,-20),
+                   # Point(WINDOW_WIDTH+WINDOW_RIGHTPANEL+20,WINDOW_HEIGHT+20))
+    # fg.setFill("darkgray")
+    # fg.setOutline("darkgray")
+    # fg.draw(window)
+    # fg = Text(Point(WINDOW_WIDTH+100,
+                    # 30),"Olinland Redux")
+    # fg.setSize(24)
+    # fg.setStyle("italic")
+    # fg.setFill("red")
+    # fg.draw(window)
 
 
 #
@@ -441,27 +475,30 @@ def create_panel (window):
 #
 def main ():
 
+    # window = GraphWin("Olinland Redux", 
+                      # WINDOW_WIDTH+WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
+                      # autoflush=False)
     window = GraphWin("Olinland Redux", 
-                      WINDOW_WIDTH+WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
+                      WINDOW_WIDTH, WINDOW_HEIGHT,
                       autoflush=False)
 
     level = Level()
     log ("level created")
 
-    scr = Screen(level,window,25,25)
+    scr = Screen(level,window,11,11)
     log ("screen created")
 
     q = EventQueue()
 
-    OlinStatue().materialize(scr,20,20)
-    Rat("Pinky","A rat").register(q,40).materialize(scr,30,30)
-    Rat("Brain","A rat with a big head").register(q,60).materialize(scr,10,30)
+    # OlinStatue().materialize(scr,20,20)
+    # Rat("Pinky","A rat").register(q,40).materialize(scr,30,30)
+    # Rat("Brain","A rat with a big head").register(q,60).materialize(scr,10,30)
 
-    create_panel(window)
+    # create_panel(window)
 
-    p = Player("...what's your name, bub?...").materialize(scr,25,25)
+    p = Player("...what's your name, bub?...").materialize(scr,11,11)
 
-    q.enqueue(1,CheckInput(window,p))
+    q.enqueue(2,CheckInput(window,p,scr))
 
     while True:
         # Grab the next event from the queue if it's ready
@@ -473,3 +510,4 @@ def main ():
 
 if __name__ == '__main__':
     main()
+    # cProfile.run('main()')
