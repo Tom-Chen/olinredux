@@ -1,10 +1,5 @@
-############################################################
-#
-# Olinland Redux
-#
-# Scaffolding to the final project for Game Programming
-#
-#
+# Olin in SPACE
+# An auto-scrolling shooter
 
 import time
 import random
@@ -12,15 +7,33 @@ from graphics import *
 import cProfile
 import re
 
+# Helpers
+def in_level(x,y):
+    return x >= 0 and y >= 0 and x < LEVEL_WIDTH and y < LEVEL_HEIGHT
 
+def z_raise (elt):
+    elt.canvas.tag_raise(elt.id)
+ 
+def z_lower (elt):
+    elt.canvas.tag_lower(elt.id)
+    
+MOVE = {
+    'Left': (-1,0),
+    'Right': (1,0),
+    'Up' : (0,-1),
+    'Down' : (0,1)
+}
 
 # Tile size of the level
-LEVEL_WIDTH = 42
-LEVEL_HEIGHT = 42
+LEVEL_WIDTH = 201
+LEVEL_HEIGHT = 21
 
 # Tile size of the viewport (through which you view the level)
 VIEWPORT_WIDTH = 21
 VIEWPORT_HEIGHT = 21   
+
+HALFWIDTH = (VIEWPORT_WIDTH-1)/2
+HALFHEIGHT = (VIEWPORT_HEIGHT-1)/2
 
 # Pixel size of a tile (which gives you the size of the window)
 TILE_SIZE = 24
@@ -41,7 +54,6 @@ WINDOW_HEIGHT = TILE_SIZE * VIEWPORT_HEIGHT
 # Roughly modeled from the corresponding hierarchy in our
 # adventure game
 #
-
 
 #
 # The root object
@@ -129,23 +141,6 @@ class OlinStatue (Thing):
         rect.setFill("gray")
         rect.setOutline("gray")
         self._sprite = rect
-
-# Helpers
-def in_level(x,y):
-    return x >= 0 and y >= 0 and x < LEVEL_WIDTH and y < LEVEL_HEIGHT
-
-def z_raise (elt):
-    elt.canvas.tag_raise(elt.id)
- 
-def z_lower (elt):
-    elt.canvas.tag_lower(elt.id)
-    
-MOVE = {
-    'Left': (-1,0),
-    'Right': (1,0),
-    'Up' : (0,-1),
-    'Down' : (0,1)
-}
         
 #
 # Characters represent persons and animals and things that move
@@ -238,16 +233,6 @@ class Player (Character):
     # In particular, when the Player move, the screen scrolls,
     # something that does not happen for other characters
 
-    def move (self,dx,dy):
-        tx = self._x + dx
-        ty = self._y + dy
-        # log((self._x,self._y))
-        if in_level(tx,ty):
-          self._x = tx
-          self._y = ty
-          return True
-        return False
-
 
 #############################################################
 # 
@@ -323,41 +308,62 @@ class Screen (object):
         # and possible record them for future manipulation
         # you'll probably want to change this at some point to
         # get scrolling to work right...
-        self.redraw()
+        self._onscreen = []
+        self.firstDraw()
 
+    def color(self,elt,currentTile):
+        if currentTile == 0:
+            elt.setFill('lightgreen')
+            elt.setOutline('lightgreen')
+        if currentTile == 1:
+            elt.setFill('sienna')
+            elt.setOutline('sienna')
+        elif currentTile == 2:
+            elt.setFill('darkgrey')
+            elt.setOutline('darkgrey')
         
-    def redraw(self):
-        dx = (VIEWPORT_WIDTH-1)/2
-        dy = (VIEWPORT_HEIGHT-1)/2
-        for y in range(self._cy-dy,self._cy+dy+1):
-            for x in range(self._cx-dx,self._cx+dx+1):
-                # log((x,y))
-                sx = (x-(self._cx-dx)) * TILE_SIZE
-                sy = (y-(self._cy-dy)) * TILE_SIZE
+    def shift(self,dx,dy):
+        # moves all current tiles. If tiles move offscreen (based on their point1) remove them
+        for tile in self._onscreen:
+          tile.move(-dx*TILE_SIZE,-dy*TILE_SIZE)
+          if tile.p1.x < 0 and tile.p1.x/TILE_SIZE +1 > VIEWPORT_WIDTH and tile.p1.y < 0 and title.p1.y/TILE_SIZE + 1 > VIEWPORT_HEIGHT:
+            tile.undraw()
+            self._onscreen.remove(tile)
+        # redraw new tiles
+        if(dx != 0):
+          if(dx == 1):
+            sx = (VIEWPORT_WIDTH-1) * TILE_SIZE
+          if(dx == -1):
+            sx = 0
+          for y in range(self._cy-HALFHEIGHT,self._cy+HALFHEIGHT+1):
+            sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
+            elt = Rectangle(Point(sx,sy),
+            Point(sx+TILE_SIZE,sy+TILE_SIZE))
+            currentTile = self.tile(self._cx + HALFWIDTH+1,y)
+            self.color(elt,currentTile)
+            self._onscreen.append(elt)
+            elt.draw(self._window)
+
+            
+        
+    def firstDraw(self):
+        for y in range(self._cy-HALFHEIGHT,self._cy+HALFHEIGHT+1):
+            for x in range(self._cx-HALFWIDTH,self._cx+HALFWIDTH+1):
+                sx = (x-(self._cx-HALFWIDTH)) * TILE_SIZE
+                sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
                 elt = Rectangle(Point(sx,sy),
                                 Point(sx+TILE_SIZE,sy+TILE_SIZE))
                 currentTile = self.tile(x,y)
-                if currentTile == 0:
-                    elt.setFill('lightgreen')
-                    elt.setOutline('lightgreen')
-                if currentTile == 1:
-                    elt.setFill('green')
-                    elt.setOutline('green')
-                elif currentTile == 2:
-                    elt.setFill('sienna')
-                    elt.setOutline('sienna')
-                elif currentTile == 3:
-                    elt.setFill('black')
-                    elt.setOutline('black')
+                self.color(elt,currentTile)
+                self._onscreen.append(elt)
                 elt.draw(self._window)
 
     # return the tile at a given tile position
     def tile (self,x,y):
-        # log(self._level.tile(x,y))
-        # return self._level.tile(x,y)
-        try: return self._level.tile(x,y)
-        except IndexError:
-          return 3
+        return self._level.tile(x,y)
+        # try: return self._level.tile(x,y)
+        # except IndexError:
+          # return 3
 
     # add a thing to the screen at a given position
     def add (self,item,x,y):
@@ -435,15 +441,27 @@ class CheckInput (object):
         if key == 'q':
             self._window.close()
             exit(0)
-        if key in MOVE:
+        if key in ['Up','Down']:
             (dx,dy) = MOVE[key]
-            didMove = self._player.move(dx,dy)
-            if(didMove == True):
-              self._screen._cx += dx
-              self._screen._cy += dy
-              self._screen.redraw()
-            z_raise(self._player._sprite)
+            self._player.move(dx,dy)
         q.enqueue(1,self)
+        
+# Autoscroller event
+class ScrollForward (object):
+    def __init__ (self,window,player,screen):
+        self._player = player
+        self._window = window
+        self._screen = screen
+
+    def event (self,q):
+        tx = self._player._x + 1
+        if in_level(tx+21,self._player._y):
+            self._player._x = tx
+            log(self._player._x)
+            self._screen._cx += 1
+            self._screen.shift(1,0)
+            z_raise(self._player._sprite)
+        q.enqueue(2,self)
 
 
 # #
@@ -485,7 +503,7 @@ def main ():
     level = Level()
     log ("level created")
 
-    scr = Screen(level,window,11,11)
+    scr = Screen(level,window,10,10)
     log ("screen created")
 
     q = EventQueue()
@@ -496,9 +514,10 @@ def main ():
 
     # create_panel(window)
 
-    p = Player("...what's your name, bub?...").materialize(scr,11,11)
+    p = Player("...what's your name, bub?...").materialize(scr,0,10)
 
     q.enqueue(2,CheckInput(window,p,scr))
+    q.enqueue(2,ScrollForward(window,p,scr))
 
     while True:
         # Grab the next event from the queue if it's ready
