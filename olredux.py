@@ -11,6 +11,9 @@ import re
 def in_level(x,y):
     return x >= 0 and y >= 0 and x < LEVEL_WIDTH and y < LEVEL_HEIGHT
 
+def log (message):
+    print time.strftime("[%H:%M:%S]",time.localtime()),message
+
 def z_raise (elt):
     elt.canvas.tag_raise(elt.id)
  
@@ -65,8 +68,8 @@ class Root (object):
     def is_thing (self):
         return False
 
-    # is this object a Character?
-    def is_character (self):
+    # is this object a MobileThing?
+    def is_mobilething (self):
         return False
 
     # is this object the Player?
@@ -129,34 +132,34 @@ class Thing (Root):
     def is_walkable (self):
         return False
 
-
-#
-# Example of a kind of thing with its specific sprite
-# (here, a rather boring gray rectangle.)
-#
-class OlinStatue (Thing):
+class HealthBar (Thing):
     def __init__ (self):
-        Thing.__init__(self,"Olin statue","A statue of F. W. Olin")
-        rect = Rectangle(Point(1,1),Point(TILE_SIZE-1,TILE_SIZE-1))
-        rect.setFill("gray")
-        rect.setOutline("gray")
-        self._sprite = rect
-        
+        self._name = "Player's Health Bar"
+        self._desc = "Don't let it run out!"
+        self._sprite = Text(Point(WINDOW_WIDTH - 100,
+                            30),3)
+        self._sprite.setSize(24)
+        self._sprite.setStyle("italic")
+        self._sprite.setFill("red")
+
+    def is_walkable (self):
+        return True
+     
 #
-# Characters represent persons and animals and things that move
+# MobileThings represent persons and animals and things that move
 # about possibly proactively
 #
-class Character (Thing):
+class MobileThing (Thing):
     def __init__ (self,name,desc):
         Thing.__init__(self,name,desc)
-        log("Character.__init__ for "+str(self))
+        log("MobileThing.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))
         rect.setFill("red")
         rect.setOutline("red")
         self._sprite = rect
 
-    # A helper method to register the character with the event queue
+    # A helper method to register the mobilething with the event queue
     # Call this method with a queue and a time delay before
     # the event is called
     # Note that the method returns the object itself, so we can
@@ -168,18 +171,18 @@ class Character (Thing):
         q.enqueue(freq,self)
         return self
         
-    # A character has a move() method that you should implement
+    # A mobilething has a move() method that you should implement
     # to enable movement
 
     def move (self,dx,dy):
         tx = self._x + dx
         ty = self._y + dy
         if in_level(tx,ty):
-          self._x = tx
-          self._y = ty
-          self._sprite.move(dx*TILE_SIZE,dy*TILE_SIZE)
+            self._x = tx
+            self._y = ty
+            self._sprite.move(dx*TILE_SIZE,dy*TILE_SIZE)
 
-    def is_character (self):
+    def is_mobilething (self):
         return True
 
     def is_walkable (self):
@@ -187,53 +190,64 @@ class Character (Thing):
 
 
 # 
-# A Rat is an example of a character which defines an event that makes
-# the rat move, so that it can be queued into the event queue to enable
-# that behavior. (Which is right now unfortunately not implemented.)
+# Hostiles damage the player on collision 
 #
-class Rat (Character):
+
+class Hostile (MobileThing):
+    hostiles = []
     def __init__ (self,name,desc):
-        Character.__init__(self,name,desc)
-        log("Rat.__init__ for "+str(self))
+        MobileThing.__init__(self,name,desc)
+        log("hostile.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))
         rect.setFill("red")
         rect.setOutline("red")
         self._sprite = rect
         self._direction = random.randrange(4)
+        Hostile.hostiles.append(self)
 
     # this gets called from event queue when the time is right
-
-    def event (self,q):
-        randomDirection = random.choice(MOVE.keys())
-        self.move(MOVE[randomDirection][0],MOVE[randomDirection][1])
-        log("event for "+str(self))
-        q.enqueue(100,self);
+    
+    # def event (self,q):
+        # randomDirection = random.choice(MOVE.keys())
+        # self.move(MOVE[randomDirection][0],MOVE[randomDirection][1])
+        # log("event for "+str(self))
+        # q.enqueue(100,self);
         
         
 
 
 #
-# The Player character
+# The Player mobilething
 #
-class Player (Character):
+class Player (MobileThing):
     def __init__ (self,name):
-        Character.__init__(self,name,"Yours truly")
+        MobileThing.__init__(self,name,"Yours truly")
         log("Player.__init__ for "+str(self))
         pic = 't_android_red.gif'
         self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),pic)
-
+        self._invulnerable = False
+        self._health = 3
+                        
     def is_player (self):
         return True
 
-    # The move() method of the Player is called when you 
-    # press movement keys. 
-    # It is different enough from movement by the other
-    # characters that you'll probably need to overwrite it.
-    # In particular, when the Player move, the screen scrolls,
-    # something that does not happen for other characters
+    def take_damage (self,q):
+        if(self._health > 1):
+            log("Collision!")
+            self._invulnerable = True
+            self._health -= 1
+            log(("Remaining Health: " +  str(self._health)))
+            log("Collision shield on")
+            q.enqueue(120,PlayerShieldOff(self))
+            
+        else:
+            self.die()
 
-
+    def die (self):
+        log("Game Over!")
+        exit(0)
+        
 #############################################################
 # 
 # The description of the world and the screen which displays
@@ -313,8 +327,8 @@ class Screen (object):
 
     def color(self,elt,currentTile):
         if currentTile == 0:
-            elt.setFill('lightgreen')
-            elt.setOutline('lightgreen')
+            elt.setFill('black')
+            elt.setOutline('black')
         if currentTile == 1:
             elt.setFill('sienna')
             elt.setOutline('sienna')
@@ -325,24 +339,24 @@ class Screen (object):
     def shift(self,dx,dy):
         # moves all current tiles. If tiles move offscreen (based on their point1) remove them
         for tile in self._onscreen:
-          tile.move(-dx*TILE_SIZE,-dy*TILE_SIZE)
-          if tile.p1.x < 0 and tile.p1.x/TILE_SIZE +1 > VIEWPORT_WIDTH and tile.p1.y < 0 and title.p1.y/TILE_SIZE + 1 > VIEWPORT_HEIGHT:
-            tile.undraw()
-            self._onscreen.remove(tile)
+            tile.move(-dx*TILE_SIZE,-dy*TILE_SIZE)
+            if tile.p1.x < 0 and tile.p1.x/TILE_SIZE +1 > VIEWPORT_WIDTH and tile.p1.y < 0 and title.p1.y/TILE_SIZE + 1 > VIEWPORT_HEIGHT:
+                tile.undraw()
+                self._onscreen.remove(tile)
         # redraw new tiles
         if(dx != 0):
-          if(dx == 1):
-            sx = (VIEWPORT_WIDTH-1) * TILE_SIZE
-          if(dx == -1):
-            sx = 0
-          for y in range(self._cy-HALFHEIGHT,self._cy+HALFHEIGHT+1):
-            sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
-            elt = Rectangle(Point(sx,sy),
-            Point(sx+TILE_SIZE,sy+TILE_SIZE))
-            currentTile = self.tile(self._cx + HALFWIDTH+1,y)
-            self.color(elt,currentTile)
-            self._onscreen.append(elt)
-            elt.draw(self._window)
+            if(dx == 1):
+                sx = (VIEWPORT_WIDTH-1) * TILE_SIZE
+            if(dx == -1):
+                sx = 0
+            for y in range(self._cy-HALFHEIGHT,self._cy+HALFHEIGHT+1):
+                sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
+                elt = Rectangle(Point(sx,sy),
+                Point(sx+TILE_SIZE,sy+TILE_SIZE))
+                currentTile = self.tile(self._cx + HALFWIDTH+1,y)
+                self.color(elt,currentTile)
+                self._onscreen.append(elt)
+                elt.draw(self._window)
 
             
         
@@ -361,9 +375,6 @@ class Screen (object):
     # return the tile at a given tile position
     def tile (self,x,y):
         return self._level.tile(x,y)
-        # try: return self._level.tile(x,y)
-        # except IndexError:
-          # return 3
 
     # add a thing to the screen at a given position
     def add (self,item,x,y):
@@ -378,16 +389,6 @@ class Screen (object):
     # helper method to get at underlying window
     def window (self):
         return self._window
-
-
-
-
-# A helper function that lets you log information to the console
-# with some timing information. I found this super useful to 
-# debug tricky event-based problems.
-#
-def log (message):
-    print time.strftime("[%H:%M:%S]",time.localtime()),message
 
     
 
@@ -444,7 +445,7 @@ class CheckInput (object):
         if key in ['Up','Down']:
             (dx,dy) = MOVE[key]
             self._player.move(dx,dy)
-        q.enqueue(1,self)
+        q.enqueue(2,self)
         
 # Autoscroller event
 class ScrollForward (object):
@@ -457,12 +458,33 @@ class ScrollForward (object):
         tx = self._player._x + 1
         if in_level(tx+21,self._player._y):
             self._player._x = tx
-            log(self._player._x)
             self._screen._cx += 1
             self._screen.shift(1,0)
             z_raise(self._player._sprite)
-        q.enqueue(2,self)
-
+            for hostile in Hostile.hostiles:
+                hostile._sprite.move(-1 * TILE_SIZE,0)
+                z_raise(hostile._sprite)
+        q.enqueue(20,self)
+        
+# Collision Detection 
+class CheckCollision (object):
+    def __init__ (self,player):
+        self._player = player
+        
+    def event (self,q):
+        for hostile in Hostile.hostiles:
+          if((hostile._x == self._player._x) and (hostile._y == self._player._y) and (self._player._invulnerable == False)):
+              self._player.take_damage(q)
+        q.enqueue(10,self)
+            
+# Invulnerability timer
+class PlayerShieldOff (object):
+    def __init__ (self,player):
+        self._player = player    
+        
+    def event(self,q):
+        self._player._invulnerable = False
+        log("Collision shield off")
 
 # #
 # # Create the right-side panel that can be used to display interesting
@@ -474,7 +496,7 @@ class ScrollForward (object):
     # fg.setFill("darkgray")
     # fg.setOutline("darkgray")
     # fg.draw(window)
-    # fg = Text(Point(WINDOW_WIDTH+100,
+    # fg = Text(Point(WINDOW_WIDTH - 100,
                     # 30),"Olinland Redux")
     # fg.setSize(24)
     # fg.setStyle("italic")
@@ -492,10 +514,6 @@ class ScrollForward (object):
 # changes
 #
 def main ():
-
-    # window = GraphWin("Olinland Redux", 
-                      # WINDOW_WIDTH+WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
-                      # autoflush=False)
     window = GraphWin("Olinland Redux", 
                       WINDOW_WIDTH, WINDOW_HEIGHT,
                       autoflush=False)
@@ -505,19 +523,24 @@ def main ():
 
     scr = Screen(level,window,10,10)
     log ("screen created")
-
+    
     q = EventQueue()
 
-    # OlinStatue().materialize(scr,20,20)
-    # Rat("Pinky","A rat").register(q,40).materialize(scr,30,30)
-    # Rat("Brain","A rat with a big head").register(q,60).materialize(scr,10,30)
+    Hostile("Scoundrel","A scoundrel").materialize(scr,10,10)
+    Hostile("Rogue","A rogue").materialize(scr,14,10)
+    Hostile("Ruffian","A ruffian").materialize(scr,18,10)
+    Hostile("Jerk","A jerk").materialize(scr,22,10)
+    Hostile("Awful","Wow!").materialize(scr,26,10)
+    Hostile("Villain","A villain").materialize(scr,30,10)
 
     # create_panel(window)
 
     p = Player("...what's your name, bub?...").materialize(scr,0,10)
+    h = HealthBar().materialize(scr,20,1)
 
     q.enqueue(2,CheckInput(window,p,scr))
-    q.enqueue(2,ScrollForward(window,p,scr))
+    q.enqueue(20,ScrollForward(window,p,scr))
+    q.enqueue(10,CheckCollision(p))
 
     while True:
         # Grab the next event from the queue if it's ready
