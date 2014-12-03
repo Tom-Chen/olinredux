@@ -95,7 +95,7 @@ class Thing (Root):
         self._name = name
         self._description = desc
         self._sprite = Text(Point(TILE_SIZE/2,TILE_SIZE/2),"?")
-        log("Thing.__init__ for "+str(self))
+        # log("Thing.__init__ for "+str(self))
 
     def __str__ (self):
         return "<"+self.name()+">"
@@ -152,7 +152,7 @@ class HealthBar (Thing):
 class MobileThing (Thing):
     def __init__ (self,name,desc):
         Thing.__init__(self,name,desc)
-        log("MobileThing.__init__ for "+str(self))
+        # log("MobileThing.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))
         rect.setFill("red")
@@ -197,7 +197,7 @@ class Hostile (MobileThing):
     hostiles = []
     def __init__ (self,name,desc):
         MobileThing.__init__(self,name,desc)
-        log("hostile.__init__ for "+str(self))
+        # log("hostile.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))
         rect.setFill("red")
@@ -206,6 +206,11 @@ class Hostile (MobileThing):
         self._direction = random.randrange(4)
         Hostile.hostiles.append(self)
 
+    def die(self):
+        log("Enemy Killed!")
+        Hostile.hostiles.remove(self)
+        self._sprite.undraw()
+        
     # this gets called from event queue when the time is right
     
     # def event (self,q):
@@ -215,19 +220,18 @@ class Hostile (MobileThing):
         # q.enqueue(100,self);
         
         
-
-
 #
 # The Player mobilething
 #
 class Player (MobileThing):
     def __init__ (self,name):
         MobileThing.__init__(self,name,"Yours truly")
-        log("Player.__init__ for "+str(self))
+        # log("Player.__init__ for "+str(self))
         pic = 't_android_red.gif'
         self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),pic)
         self._invulnerable = False
         self._health = 3
+        self._weaponready = True
                         
     def is_player (self):
         return True
@@ -382,8 +386,6 @@ class Screen (object):
         item.sprite().move((x-(self._cx-(VIEWPORT_WIDTH-1)/2))*TILE_SIZE,
                            (y-(self._cy-(VIEWPORT_HEIGHT-1)/2))*TILE_SIZE)
         item.sprite().draw(self._window)
-        # WRITE ME!   You'll have to figure out how to manage these
-        # because chances are when you scroll these will not move!
 
 
     # helper method to get at underlying window
@@ -445,6 +447,33 @@ class CheckInput (object):
         if key in ['Up','Down']:
             (dx,dy) = MOVE[key]
             self._player.move(dx,dy)
+        #firing code (probably put it in a function later)
+        if (key == 'space'):
+            if (self._player._weaponready == True):
+                self._player._weaponready = False
+                log("Fire!")
+                for hostile in Hostile.hostiles:
+                    log(hostile._y)
+                    if self._player._y == hostile._y:
+                        hostile.die()
+                q.enqueue(100, BeamCooldownOff(self._player))
+                #draw beams
+                sx = TILE_SIZE
+                sy = self._player._y * TILE_SIZE + TILE_SIZE/8
+                elt = Rectangle(Point(sx,sy),
+                Point(((sx+TILE_SIZE) * VIEWPORT_WIDTH),sy+(TILE_SIZE/8)))
+                elt.setFill('Blue')
+                elt.setOutline('Blue')
+                elt.draw(self._window)
+                sx = TILE_SIZE
+                sy = self._player._y * TILE_SIZE + TILE_SIZE*3/4
+                elt2 = Rectangle(Point(sx,sy),
+                Point(((sx+TILE_SIZE) * VIEWPORT_WIDTH),sy+(TILE_SIZE/8)))
+                elt2.setFill('Blue')
+                elt2.setOutline('Blue')
+                elt2.draw(self._window)
+                q.enqueue(10, ClearBeam(self._screen,[elt,elt2]))
+                
         q.enqueue(2,self)
         
 # Autoscroller event
@@ -464,17 +493,43 @@ class ScrollForward (object):
             for hostile in Hostile.hostiles:
                 hostile._sprite.move(-1 * TILE_SIZE,0)
                 z_raise(hostile._sprite)
-        q.enqueue(20,self)
+            q.enqueue(10,self)
         
-# Collision Detection 
-class CheckCollision (object):
-    def __init__ (self,player):
+# Spawn enemies
+class SpawnWave (object):
+    def __init__ (self,window,player,screen):
         self._player = player
+        self._window = window
+        self._screen = screen
+
+    def event (self,q):
+        if in_level(self._screen._cx + VIEWPORT_WIDTH, self._screen._cy):
+            spawnX = self._screen._cx + (VIEWPORT_WIDTH - 1)/2
+            Hostile("Scoundrel","A scoundrel").materialize(self._screen,spawnX,random.randint(1,20))
+            Hostile("Rogue","A rogue").materialize(self._screen,spawnX,random.randint(1,20))
+            Hostile("Ruffian","A ruffian").materialize(self._screen,spawnX,random.randint(1,20))
+            Hostile("Jerk","A jerk").materialize(self._screen,spawnX,random.randint(1,20))
+            Hostile("Awful","Wow!").materialize(self._screen,spawnX,random.randint(1,20))
+            Hostile("Villain","A villain").materialize(self._screen,spawnX,random.randint(1,20))
+            q.enqueue(100,self)
+        else:
+            log("Spawn boss now")
+    
+        
+# Collision Detection, Enemy Cleanup
+class CheckPosition (object):
+    def __init__ (self,window,player,screen):
+        self._player = player
+        self._window = window
+        self._screen = screen
         
     def event (self,q):
         for hostile in Hostile.hostiles:
           if((hostile._x == self._player._x) and (hostile._y == self._player._y) and (self._player._invulnerable == False)):
               self._player.take_damage(q)
+          if(hostile._x < (self._screen._cx - (VIEWPORT_WIDTH - 1) / 2)):
+              #hostile dying - check garbage collectioni
+              Hostile.hostiles.remove(hostile)
         q.enqueue(10,self)
             
 # Invulnerability timer
@@ -485,24 +540,25 @@ class PlayerShieldOff (object):
     def event(self,q):
         self._player._invulnerable = False
         log("Collision shield off")
-
-# #
-# # Create the right-side panel that can be used to display interesting
-# # information to the player
-# #
-# def create_panel (window):
-    # fg = Rectangle(Point(WINDOW_WIDTH+1,-20),
-                   # Point(WINDOW_WIDTH+WINDOW_RIGHTPANEL+20,WINDOW_HEIGHT+20))
-    # fg.setFill("darkgray")
-    # fg.setOutline("darkgray")
-    # fg.draw(window)
-    # fg = Text(Point(WINDOW_WIDTH - 100,
-                    # 30),"Olinland Redux")
-    # fg.setSize(24)
-    # fg.setStyle("italic")
-    # fg.setFill("red")
-    # fg.draw(window)
-
+        
+# Beam weapon timer
+class BeamCooldownOff (object):
+    def __init__ (self,player):
+        self._player = player    
+        
+    def event(self,q):
+        self._player._weaponready = True
+        log("Beam ready")
+        
+# Beam erase
+class ClearBeam (object):
+    def __init__ (self,screen,beams):
+        self._screen = screen
+        self._beams = beams
+        
+    def event(self,q):
+        for beam in self._beams:
+            beam.undraw()
 
 #
 # The main function
@@ -526,21 +582,13 @@ def main ():
     
     q = EventQueue()
 
-    Hostile("Scoundrel","A scoundrel").materialize(scr,10,10)
-    Hostile("Rogue","A rogue").materialize(scr,14,10)
-    Hostile("Ruffian","A ruffian").materialize(scr,18,10)
-    Hostile("Jerk","A jerk").materialize(scr,22,10)
-    Hostile("Awful","Wow!").materialize(scr,26,10)
-    Hostile("Villain","A villain").materialize(scr,30,10)
-
-    # create_panel(window)
-
     p = Player("...what's your name, bub?...").materialize(scr,0,10)
     h = HealthBar().materialize(scr,20,1)
 
     q.enqueue(2,CheckInput(window,p,scr))
-    q.enqueue(20,ScrollForward(window,p,scr))
-    q.enqueue(10,CheckCollision(p))
+    q.enqueue(10,ScrollForward(window,p,scr))
+    q.enqueue(10,CheckPosition(window,p,scr))
+    q.enqueue(10, SpawnWave(window,p,scr))
 
     while True:
         # Grab the next event from the queue if it's ready
