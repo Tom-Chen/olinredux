@@ -1,0 +1,10 @@
+todo
+
+enemy spawn patterns DONE
+UI
+enemy charging forward
+projectiles
+allied projectiles
+enemy projectiles
+boss fight
+graphics
