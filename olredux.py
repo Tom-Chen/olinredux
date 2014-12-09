@@ -27,45 +27,52 @@ import cProfile
 # It re-enqueues itself after the check.
 
 class CheckInput (object):
-    def __init__ (self,window,player,screen):
+    def __init__ (self,window,player,screen,weapon):
         self._player = player
         self._window = window
         self._screen = screen
+        self._weapon = weapon
 
     def event (self,q):
         key = self._window.checkKey()
         if key == 'q':
             self._window.close()
             exit(0)
+        if key in ["1","2"]:
+            self._player._weapon = WEAPON[key]
+            self._weapon.update(self._player._weapon,self._window)
+            log(self._player._weapon)
         if key in ['Up','Down']:
             (dx,dy) = MOVE[key]
             self._player.move(dx,dy)
         #firing code (probably put it in a function later)
         if (key == 'space'):
             if (self._player._weaponready == True):
-                self._player._weaponready = False
                 log("Fire!")
-                for hostile in Hostile.hostiles:
-                    # log(hostile._y)
-                    if self._player._y == hostile._y:
-                        hostile.die()
-                q.enqueue(100, BeamCooldownOff(self._player))
-                #draw beams
-                sx = TILE_SIZE
-                sy = self._player._y * TILE_SIZE + TILE_SIZE/8
-                elt = Rectangle(Point(sx,sy),
-                Point(((sx+TILE_SIZE) * VIEWPORT_WIDTH),sy+(TILE_SIZE/8)))
-                elt.setFill('Blue')
-                elt.setOutline('Blue')
-                elt.draw(self._window)
-                sx = TILE_SIZE
-                sy = self._player._y * TILE_SIZE + TILE_SIZE*3/4
-                elt2 = Rectangle(Point(sx,sy),
-                Point(((sx+TILE_SIZE) * VIEWPORT_WIDTH),sy+(TILE_SIZE/8)))
-                elt2.setFill('Blue')
-                elt2.setOutline('Blue')
-                elt2.draw(self._window)
-                q.enqueue(10, ClearBeam(self._screen,[elt,elt2]))
+                if(self._player._weapon == "Beam"):
+                  self._player._weaponready = False
+                  endx = TILE_SIZE * (VIEWPORT_WIDTH)
+                  for hostile in Hostile.hostiles:
+                      if self._player._y == hostile._y:
+                          hostile.take_damage(3)
+                          endx = (hostile._x * TILE_SIZE) - ((self._player._x-1) * TILE_SIZE)
+                          break
+                  #draw beams
+                  sx = TILE_SIZE
+                  sy = self._player._y * TILE_SIZE + TILE_SIZE/8
+                  elt = Rectangle(Point(sx,sy),
+                                  Point(endx,sy+(TILE_SIZE/8)))
+                  elt.setFill('Blue')
+                  elt.setOutline('Blue')
+                  elt.draw(self._window)
+                  sy = self._player._y * TILE_SIZE + TILE_SIZE*3/4
+                  elt2 = Rectangle(Point(sx,sy),
+                                   Point(endx,sy+(TILE_SIZE/8)))
+                  elt2.setFill('Blue')
+                  elt2.setOutline('Blue')
+                  elt2.draw(self._window)
+                  q.enqueue(10, ClearBeam(self._screen,[elt,elt2]))
+                  q.enqueue(67, BeamCooldownOff(self._player))
                 
         q.enqueue(2,self)
         
@@ -86,7 +93,7 @@ class ScrollForward (object):
             for hostile in Hostile.hostiles:
                 hostile._sprite.move(-1 * TILE_SIZE,0)
                 z_raise(hostile._sprite)
-            q.enqueue(2,self)
+            q.enqueue(40,self)
         else:
             for hostile in Hostile.hostiles:
                 hostile.move(-1 * TILE_SIZE,0)
@@ -102,12 +109,13 @@ class SpawnWave (object):
     def event (self,q):
         if in_level(self._screen._cx + VIEWPORT_WIDTH, self._screen._cy):
             spawnX = self._screen._cx + (VIEWPORT_WIDTH - 1)/2
-            Hostile("Scoundrel","A scoundrel").materialize(self._screen,spawnX,random.randint(1,20))
-            Hostile("Rogue","A rogue").materialize(self._screen,spawnX,random.randint(1,20))
-            Hostile("Ruffian","A ruffian").materialize(self._screen,spawnX,random.randint(1,20))
-            Hostile("Jerk","A jerk").materialize(self._screen,spawnX,random.randint(1,20))
-            Hostile("Awful","Wow!").materialize(self._screen,spawnX,random.randint(1,20))
-            Hostile("Villain","A villain").materialize(self._screen,spawnX,random.randint(1,20))
+            spot1,spot2,spot3,spot4,spot5,spot6 =  random.sample(range(1,20),6)
+            Hostile("Scoundrel","A scoundrel").materialize(self._screen,spawnX,spot1)
+            Hostile("Rogue","A rogue").materialize(self._screen,spawnX,spot2)
+            Hostile("Ruffian","A ruffian").materialize(self._screen,spawnX,spot3)
+            Hostile("Jerk","A jerk").materialize(self._screen,spawnX,spot4)
+            Hostile("Awful","Wow!").materialize(self._screen,spawnX,spot5)
+            Hostile("Villain","A villain").materialize(self._screen,spawnX,spot6)
             q.enqueue(100,self)
         else:
             log("Spawn boss now")
@@ -115,18 +123,21 @@ class SpawnWave (object):
         
 # Collision Detection, Enemy Cleanup
 class CheckPosition (object):
-    def __init__ (self,window,player,screen):
+    def __init__ (self,window,player,screen,h):
         self._player = player
         self._window = window
         self._screen = screen
+        self._healthbar = h
         
     def event (self,q):
         for hostile in Hostile.hostiles:
           if((hostile._x == self._player._x) and (hostile._y == self._player._y) and (self._player._invulnerable == False)):
               self._player.take_damage(q)
+              self._healthbar.update(self._player._health, self._window)
           if(hostile._x < (self._screen._cx - (VIEWPORT_WIDTH - 1) / 2)):
-              #hostile dying - check garbage collectioni
+              #hostile dying - check garbage collection
               Hostile.hostiles.remove(hostile)
+              hostile._sprite.undraw()
         q.enqueue(10,self)
             
 # Invulnerability timer
@@ -156,7 +167,7 @@ class ClearBeam (object):
     def event(self,q):
         for beam in self._beams:
             beam.undraw()
-
+            
 #
 # The main function
 # 
@@ -168,7 +179,7 @@ class ClearBeam (object):
 #
 def main ():
     window = GraphWin("Olinland Redux", 
-                      WINDOW_WIDTH, WINDOW_HEIGHT,
+                      WINDOW_WIDTH + WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
                       autoflush=False)
 
     level = Level()
@@ -177,14 +188,17 @@ def main ():
     scr = Screen(level,window,10,10)
     log ("screen created")
     
+    create_panel(window);
+    
     q = EventQueue()
 
     p = Player("...what's your name, bub?...").materialize(scr,0,10)
-    h = HealthBar().materialize(scr,20,1)
+    h = HealthBar().materialize(scr,0,0)
+    w = WeaponSelect().materialize(scr,0,0)
 
-    q.enqueue(2,CheckInput(window,p,scr))
-    q.enqueue(2,ScrollForward(window,p,scr))
-    q.enqueue(10,CheckPosition(window,p,scr))
+    q.enqueue(2,CheckInput(window,p,scr,w))
+    q.enqueue(40,ScrollForward(window,p,scr))
+    q.enqueue(10,CheckPosition(window,p,scr,h))
     q.enqueue(10, SpawnWave(window,p,scr))
 
     while True:
