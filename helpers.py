@@ -13,6 +13,15 @@ def z_raise (elt):
 def z_lower (elt):
     elt.canvas.tag_lower(elt.id)
     
+def offscreen_left (x, center):
+    return x < (center - (VIEWPORT_WIDTH - 1) / 2)
+    
+def offscreen_right (x, center):
+    if(in_level(center + VIEWPORT_WIDTH, 0)):
+        return x > (center + (VIEWPORT_WIDTH - 1) / 2)
+    else:
+        return x  >= (LEVEL_WIDTH - 1)
+    
 MOVE = {
     'Left': (-1,0),
     'Right': (1,0),
@@ -22,7 +31,8 @@ MOVE = {
 
 WEAPON = {
   "1": "Beam",
-  "2": "Rapid"
+  "2": "Rapid",
+  "3": "Splash"
 }
 
 # GLOBAL VARIABLES

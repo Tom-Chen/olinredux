@@ -1,7 +1,7 @@
 # A thing is something that can be interacted with and by default
 # is not moveable or walkable over
 #
-#   Thing(name,description)
+#   Thing()
 #
 # A thing defines a default sprite in field _sprite
 # To create a new kind of thing, subclass Thing and 
@@ -14,22 +14,16 @@ from helpers import *
 
 
 class Thing (Root):
-    def __init__ (self,name,desc):
-        self._name = name
-        self._description = desc
+    def __init__ (self):
         self._sprite = Text(Point(TILE_SIZE/2,TILE_SIZE/2),"?")
         # log("Thing.__init__ for "+str(self))
 
     def __str__ (self):
-        return "<"+self.name()+">"
+        return "<"+self+">"
 
     # return the sprite for display purposes
     def sprite (self):
         return self._sprite
-
-    # return the name
-    def name (self):
-        return self._name
 
     # return the position of the thing in the level array
     def position (self):

@@ -1,10 +1,10 @@
 todo
 
 enemy spawn patterns DONE
-UI
-enemy charging forward
-projectiles
-allied projectiles
-enemy projectiles
+UI DONE
+enemy charging forward DONE
+projectiles DONE
+allied projectiles DONE
+enemy projectiles DONE
 boss fight
 graphics

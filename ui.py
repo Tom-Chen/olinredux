@@ -18,13 +18,12 @@ def create_panel (window):
     fg.setFill("red")
     fg.setSize(24)    
     fg.draw(window)
+    log("UI created")
 
 class HealthBar (Thing):
     def __init__ (self):
-        self._name = "Player's Health Bar"
-        self._desc = "Don't let it run out!"
         self._sprite = Text(Point(WINDOW_WIDTH + 174,
-                            30),3)
+                            30),10)
         self._sprite.setSize(24)
         self._sprite.setFill("red")
         
@@ -42,8 +41,6 @@ class HealthBar (Thing):
         
 class WeaponSelect (Thing):
     def __init__ (self):
-        self._name = "Player's Weapon"
-        self._desc = "Boom!"
         self._sprite = Text(Point(WINDOW_WIDTH + 200,
                             72),"Beam")
         self._sprite.setSize(24)

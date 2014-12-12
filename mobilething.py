@@ -9,8 +9,8 @@ from events import *
 
 
 class MobileThing (Thing):
-    def __init__ (self,name,desc):
-        Thing.__init__(self,name,desc)
+    def __init__ (self):
+        Thing.__init__(self)
         # log("MobileThing.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))

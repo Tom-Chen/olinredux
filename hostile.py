@@ -9,15 +9,15 @@ from events import *
 
 class Hostile (MobileThing):
     hostiles = []
-    def __init__ (self,name,desc):
-        MobileThing.__init__(self,name,desc)
+    def __init__ (self):
+        MobileThing.__init__(self)
         # log("hostile.__init__ for "+str(self))
         rect = Rectangle(Point(1,1),
                          Point(TILE_SIZE-1,TILE_SIZE-1))
         rect.setFill("red")
         rect.setOutline("red")
         self._sprite = rect
-        self._direction = random.randrange(4)
+        self._charging = False
         self._health = 1
         Hostile.hostiles.append(self)
         

@@ -7,18 +7,19 @@ from helpers import *
 from events import *
 
 class Player (MobileThing):
-    def __init__ (self,name):
-        MobileThing.__init__(self,name,"Yours truly")
+    def __init__ (self):
+        MobileThing.__init__(self)
         # log("Player.__init__ for "+str(self))
         pic = 't_android_red.gif'
         self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),pic)
         self._invulnerable = False
-        self._health = 3
+        self._health = 10
         self._weaponready = True
         self._weapon = "Beam"
         
         # 1 beam
         # 2 rapid
+        # 3 splash
                         
     def is_player (self):
         return True
