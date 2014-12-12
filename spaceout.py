@@ -42,14 +42,14 @@ class CheckInput (object):
         if key in ["1","2","3"]:
             self._player._weapon = WEAPON[key]
             self._weapon.update(self._player._weapon,self._window)
-            log(self._player._weapon + " active")
+            # log(self._player._weapon + " active")
         if key in ['Up','Down']:
             (dx,dy) = MOVE[key]
             self._player.move(dx,dy)
         #firing code (probably put it in a function later)
         if (key == 'space'):
             if (self._player._weaponready == True):
-                log("Fire!")
+                # log("Fire!")
                 if(self._player._weapon == "Rapid"):
                     self._player._weaponready = False
                     Projectile(self._player._x+1,self._player._y,False,"Ally",1).materialize(self._screen,self._player._x+1,self._player._y)
@@ -129,7 +129,10 @@ class MoveProjectiles (object):
           projectile.move(projectile._speedx, projectile._speedy * TILE_SIZE)
           z_raise(projectile._sprite)
           if(projectile._side == "Ally"):
-              projectile._sprite.move(0.5 * projectile._speedx * TILE_SIZE,0)
+              if scrolling(self._screen._cx,self._screen._cy):
+                  projectile._sprite.move(0.5 * projectile._speedx * TILE_SIZE,0)
+              else:
+                  projectile._sprite.move(projectile._speedx * TILE_SIZE,0)
               if(offscreen_right(projectile._x, self._screen._cx)):
                   projectile.die()
               for hostile in Hostile.hostiles:
@@ -157,7 +160,7 @@ class EnemyAction (object):
 
     def event (self,q):
         # spawn = random.randint(0,1)
-        if (in_level(self._screen._cx + VIEWPORT_WIDTH, self._screen._cy)):
+        if scrolling(self._screen._cx,self._screen._cy):
             # if(spawn == 0):
             spawnX = self._screen._cx + (VIEWPORT_WIDTH - 1)/2
             spot1,spot2,spot3,spot4,spot5,spot6 =  random.sample(range(1,20),6)
@@ -204,7 +207,7 @@ class PlayerShieldOff (object):
         
     def event(self,q):
         self._player._invulnerable = False
-        log("Collision shield off")
+        # log("Collision shield off")
         
 # Beam weapon timer
 class WeaponCooldownOff (object):
@@ -213,7 +216,7 @@ class WeaponCooldownOff (object):
         
     def event(self,q):
         self._player._weaponready = True
-        log("Weapon ready")
+        # log("Weapon ready")
         
 # Beam erase
 class ClearBeam (object):

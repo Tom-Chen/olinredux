@@ -30,7 +30,7 @@ class Projectile (MobileThing):
             
     def die(self):
         self._sprite.undraw()
-        log("Projectile dead")
+        # log("Projectile dead")
         Projectile.projectiles.remove(self)
         
     def event (self,q):

@@ -21,7 +21,9 @@ def offscreen_right (x, center):
         return x > (center + (VIEWPORT_WIDTH - 1) / 2)
     else:
         return x  >= (LEVEL_WIDTH - 1)
-    
+
+def scrolling (cx,cy):
+    return (in_level(cx + VIEWPORT_WIDTH, cy))
 MOVE = {
     'Left': (-1,0),
     'Right': (1,0),
