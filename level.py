@@ -30,10 +30,14 @@ class Level (object):
     def __init__ (self):
         size = LEVEL_WIDTH * LEVEL_HEIGHT
         map = [0] * size
-        for i in range(100):
+        for i in range(40):
             map[random.randrange(size)] = 1
-        for i in range(50):
+        for i in range(40):
             map[random.randrange(size)] = 2
+        for i in range(40):
+            map[random.randrange(size)] = 3
+        for i in range(40):
+            map[random.randrange(size)] = 4
         self._map = map
 
     def _pos (self,x,y):

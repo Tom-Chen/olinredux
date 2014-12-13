@@ -4,7 +4,6 @@
 
 from mobilething import *
 from helpers import *
-from events import *
 
 class Player (MobileThing):
     def __init__ (self):
@@ -31,7 +30,7 @@ class Player (MobileThing):
             self._health -= 1
             log(("Remaining Health: " +  str(self._health)))
             log("Collision shield on")
-            q.enqueue(120,PlayerShieldOff(self))
+            q.enqueue(150,PlayerShieldOff(self))
             
         else:
             self.die()
@@ -39,3 +38,11 @@ class Player (MobileThing):
     def die (self):
         log("Game Over!")
         exit(0)
+        
+class PlayerShieldOff (object):
+    def __init__ (self,player):
+        self._player = player    
+        
+    def event(self,q):
+        self._player._invulnerable = False
+        log("Collision shield off")

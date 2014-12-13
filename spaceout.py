@@ -16,7 +16,7 @@ from level import *
 from screen import *
 from eventqueue import *
 from helpers import *
-from events import *
+
 
 import cProfile
 
@@ -53,11 +53,11 @@ class CheckInput (object):
                 if(self._player._weapon == "Rapid"):
                     self._player._weaponready = False
                     Projectile(self._player._x+1,self._player._y,False,"Ally",1).materialize(self._screen,self._player._x+1,self._player._y)
-                    q.enqueue(40, WeaponCooldownOff(self._player))
+                    q.enqueue(30, WeaponCooldownOff(self._player))
                 if(self._player._weapon == "Splash"):
                     self._player._weaponready = False
                     Projectile(self._player._x+1,self._player._y,True,"Ally",1).materialize(self._screen,self._player._x+1,self._player._y)
-                    q.enqueue(40, WeaponCooldownOff(self._player))
+                    q.enqueue(30, WeaponCooldownOff(self._player))
                   
                 if(self._player._weapon == "Beam"):
                     self._player._weaponready = False
@@ -82,7 +82,7 @@ class CheckInput (object):
                     elt2.setOutline('Blue')
                     elt2.draw(self._window)
                     q.enqueue(10, ClearBeam(self._screen,[elt,elt2]))
-                    q.enqueue(70, WeaponCooldownOff(self._player))
+                    q.enqueue(50, WeaponCooldownOff(self._player))
                 
         q.enqueue(2,self)
         

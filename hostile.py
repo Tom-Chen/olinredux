@@ -5,7 +5,7 @@
 import random
 from mobilething import *
 from helpers import *
-from events import *
+
 
 class Hostile (MobileThing):
     hostiles = []

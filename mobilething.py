@@ -5,7 +5,7 @@
 
 from thing import *
 from helpers import *
-from events import *
+
 
 
 class MobileThing (Thing):

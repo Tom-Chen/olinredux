@@ -1,6 +1,6 @@
 from mobilething import *
 from helpers import *
-from events import *
+
 
 class Projectile (MobileThing):
     projectiles = []
@@ -33,6 +33,6 @@ class Projectile (MobileThing):
         # log("Projectile dead")
         Projectile.projectiles.remove(self)
         
-    def event (self,q):
-        self.move(speedx,speedy)
-        q.enqueue(5,self);
+    # def event (self,q):
+        # self.move(speedx,speedy)
+        # q.enqueue(5,self);

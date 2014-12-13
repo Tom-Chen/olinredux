@@ -46,6 +46,12 @@ class Screen (object):
         elif currentTile == 2:
             elt.setFill('darkgrey')
             elt.setOutline('darkgrey')
+        elif currentTile == 3:
+            elt.setFill('darkblue')
+            elt.setOutline('darkblue')
+        elif currentTile == 4:
+            elt.setFill('darkred')
+            elt.setOutline('darkred')
         
     def shift(self,dx,dy):
         # moves all current tiles. If tiles move offscreen (based on their point1) remove them
@@ -61,9 +67,10 @@ class Screen (object):
             if(dx == -1):
                 sx = 0
             for y in range(self._cy-HALFHEIGHT,self._cy+HALFHEIGHT+1):
+                # small star test
                 sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
-                elt = Rectangle(Point(sx,sy),
-                Point(sx+TILE_SIZE,sy+TILE_SIZE))
+                elt = Rectangle(Point(sx+6,sy+6),
+                Point(sx+TILE_SIZE-6,sy+TILE_SIZE-6))
                 currentTile = self.tile(self._cx + HALFWIDTH+1,y)
                 self.color(elt,currentTile)
                 self._onscreen.append(elt)
@@ -76,8 +83,9 @@ class Screen (object):
             for x in range(self._cx-HALFWIDTH,self._cx+HALFWIDTH+1):
                 sx = (x-(self._cx-HALFWIDTH)) * TILE_SIZE
                 sy = (y-(self._cy-HALFHEIGHT)) * TILE_SIZE
-                elt = Rectangle(Point(sx,sy),
-                                Point(sx+TILE_SIZE,sy+TILE_SIZE))
+                # small star test
+                elt = Rectangle(Point(sx+6,sy+6),
+                                Point(sx+TILE_SIZE-6,sy+TILE_SIZE-6))
                 currentTile = self.tile(x,y)
                 self.color(elt,currentTile)
                 self._onscreen.append(elt)
