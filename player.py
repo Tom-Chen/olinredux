@@ -37,11 +37,12 @@ class Player (MobileThing):
     def die (self):
         log("Game Over!")
         exit(0)
+
         
-class PlayerShieldOff (object):
-    def __init__ (self,player):
-        self._player = player    
+# class PlayerShieldOff (object):
+    # def __init__ (self,player):
+        # self._player = player    
         
-    def event(self,q):
-        self._player._invulnerable = False
-        log("Collision shield off")
+    # def event(self,q):
+        # self._player._invulnerable = False
+        # log("Collision shield off")

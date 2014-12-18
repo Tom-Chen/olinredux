@@ -1,7 +1,8 @@
 from mobilething import *
 from helpers import *
 
-
+# Moves and does damage on contact
+# Projectiles can die on collision
 class Projectile (MobileThing):
     projectiles = []
     def __init__ (self,x,y,splash,damage,side,speedx,sprite):

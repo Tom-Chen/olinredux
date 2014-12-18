@@ -1,5 +1,6 @@
 from thing import *
 
+# Beam sprite 
 class Beam (Thing):
     def __init__ (self):
         Thing.__init__(self)

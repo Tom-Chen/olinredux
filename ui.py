@@ -1,6 +1,7 @@
 from thing import *
 from graphics import *
 
+# static text
 def create_panel (window):
     log("panel created")
     fg = Rectangle(Point(WINDOW_WIDTH+1,-20),
@@ -20,6 +21,7 @@ def create_panel (window):
     fg.draw(window)
     log("UI created")
 
+# text that updates
 class HealthBar (Thing):
     def __init__ (self):
         self._sprite = Text(Point(WINDOW_WIDTH + 174,

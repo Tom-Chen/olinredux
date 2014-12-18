@@ -62,7 +62,7 @@ class CheckInput (object):
                     # self._player._weaponready = False
                     # Projectile(self._player._x+1,self._player._y,True,"Ally",1,"rapidshot.gif").materialize(self._screen,self._player._x+1,self._player._y)
                     # q.enqueue(30, WeaponCooldownOff(self._player))
-                  
+                # All beam logic goes here
                 if(self._player._weapon == "Beam"):
                     self._player._weaponready = False
                     if Boss.spawned == False:
@@ -173,7 +173,7 @@ class MoveProjectiles (object):
               projectile._sprite.move(projectile._speedx * 2 * TILE_SIZE,0)
               if(offscreen_left(projectile._x, self._screen._cx)):
                   projectile.die()
-              if((projectile._x, projectile._y) == (self._player._x, self._player._y)) or ((projectile._x, projectile._y) == (self._player._x+1, self._player._y)): # make it a bit harder
+              if((projectile._x, projectile._y) == (self._player._x+2, self._player._y)) or ((projectile._x, projectile._y) == (self._player._x+1, self._player._y)): # make it a bit harder
                   self._player.take_damage(q,1)
                   explosion = Explosion(self._player._x, self._player._y).materialize(self._screen,self._player._x, self._player._y)
                   q.enqueue(2,UpdateExplosions(self._screen,self._window,explosion))
@@ -203,13 +203,16 @@ class EnemyAction (object):
     def event (self,q):
         if scrolling(self._screen._cx,self._screen._cy):
             spawnX = self._screen._cx + (VIEWPORT_WIDTH - 1)/2
-            spot1,spot2,spot3,spot4,spot5,spot6 =  random.sample(range(1,20),6)
+            spot1,spot2,spot3,spot4,spot5,spot6,spot7,spot8 =  random.sample(range(0,21),8)
+            # spot1,spot2,spot3,spot4,spot5,spot6 =  random.sample(range(1,20),6)
             Hostile().materialize(self._screen,spawnX,spot1)
             Hostile().materialize(self._screen,spawnX,spot2)
             Hostile().materialize(self._screen,spawnX,spot3)
             Hostile().materialize(self._screen,spawnX,spot4)
             Hostile().materialize(self._screen,spawnX,spot5)
             Hostile().materialize(self._screen,spawnX,spot6)
+            Hostile().materialize(self._screen,spawnX,spot7)
+            Hostile().materialize(self._screen,spawnX,spot8)
             for hostile in Hostile.hostiles:
                 if(hostile._charging == False):
                     behavior = random.randint(0,4) % 2
@@ -293,7 +296,7 @@ class UpdateExplosions(object):
             self._screen.add(self._explosion,self._explosion._x,self._explosion._y)
             q.enqueue(2,self)
 
-
+# Controls boss animation
 class BossAct(object):
     def __init__(self,window,screen,player,healthbar,boss):
         self._screen = screen
@@ -310,38 +313,39 @@ class BossAct(object):
                 Boss.ready = True
                 z_raise(self._boss._sprite)
                 frontedge = self._boss._x - self._boss._halfwidth
-                topedge = self._boss._y - self._boss._halfheight
-                bottomedge = self._boss._y + self._boss._halfheight
+                topedge = self._boss._y - self._boss._halfheight+1 # so boss can clip off screen slightly and shoot at you on the edge
+                bottomedge = self._boss._y + self._boss._halfheight-1 #s o boss can clip off screen slightly and shoot at you on the edge
                 
                 firepattern = random.randint(0,11)
                 topcannon = int(self._boss._y-2)
                 midcannon = int(self._boss._y)
                 botcannon = int(self._boss._y+2)
-                if 0 <= firepattern <= 1:
+                if 0 <= firepattern <= 2:
                     # log([self._boss._x,self._boss._y,"boss"])
                     # log(q._contents)
                     Projectile(int(frontedge),midcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),midcannon)
                     Projectile(int(frontedge),botcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),botcannon)
                     Projectile(int(frontedge),topcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),topcannon)
-                if 2 <= firepattern <= 3:
+                if 3 <= firepattern <= 5:
                     Projectile(int(frontedge),botcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),botcannon)
                     Projectile(int(frontedge),topcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),topcannon)
-                if 4 <= firepattern <= 5:
-                    Projectile(int(frontedge),midcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),midcannon)
                 if 6 <= firepattern <= 7:
-                    Projectile(int(frontedge),botcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),botcannon)
+                    Projectile(int(frontedge),midcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),midcannon)
                 if 8 <= firepattern <= 9:
+                    Projectile(int(frontedge),botcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),botcannon)
+                if 10 <= firepattern <= 11:
                     Projectile(int(frontedge),topcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),topcannon)
 
                 movement = random.randint(0,6)
-                if 0 <= movement <= 1 and in_level(self._boss._x, topedge)and in_level(self._boss._x, bottomedge):
-                    self._boss.move(0,self._boss._lastmove)
-                elif 2 <= movement <= 3 and in_level(self._boss._x, bottomedge):
-                    self._boss._lastmove = 0.5
-                    self._boss.move(0,self._boss._lastmove)
-                elif 4 <= movement <= 5 and in_level(self._boss._x, topedge):
-                    self._boss._lastmove = -0.5
-                    self._boss.move(0,self._boss._lastmove)
+                if 0 <= movement <= 3 and in_level(self._boss._x, topedge)and in_level(self._boss._x, bottomedge):
+                    if(self._boss._y > self._player._y):
+                        self._boss.move(0,-0.5)
+                    elif(self._boss._y < self._player._y):
+                        self._boss.move(0,0.5)
+                elif (movement == 4) and in_level(self._boss._x, bottomedge):
+                    self._boss.move(0,0.5)
+                elif (movement == 5) and in_level(self._boss._x, topedge):
+                    self._boss.move(0,-0.5)
                 elif movement == 6:
                     self._boss._lastmove = 0
                 q.enqueue(30,self)
@@ -350,6 +354,7 @@ class BossAct(object):
                 log("You win!")
                 q.enqueue(2,VictoryExplosions(self._window,self._screen,1))
 
+#Boom!!!
 class VictoryExplosions(object):
 
     def __init__(self,window,screen,counter):
@@ -408,7 +413,7 @@ class VictoryExplosions(object):
 # changes
 #
 def main ():
-    window = GraphWin("Olinland Redux", 
+    window = GraphWin("Spaceout!", 
                       WINDOW_WIDTH + WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
                       autoflush=False)
 

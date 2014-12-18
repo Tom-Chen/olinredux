@@ -6,5 +6,5 @@ enemy charging forward DONE
 projectiles DONE
 allied projectiles DONE
 enemy projectiles DONE
-boss fight
-graphics
+boss fight DONE
+graphics DONE

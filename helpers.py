@@ -41,7 +41,7 @@ WEAPON = {
 # GLOBAL VARIABLES
 
 # Tile size of the level
-LEVEL_WIDTH = 401
+LEVEL_WIDTH = 201
 LEVEL_HEIGHT = 21
 
 # Tile size of the viewport (through which you view the level)

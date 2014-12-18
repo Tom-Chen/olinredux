@@ -3,6 +3,7 @@ from mobilething import *
 from hostile import *
 from helpers import *
 
+# Boss differs from hostile in that it takes more than one space
 class Boss (Hostile):
     bosses = []
     spawned = False
@@ -11,7 +12,7 @@ class Boss (Hostile):
     def __init__ (self):
         Hostile.__init__(self)
         self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),'boss.gif')
-        self._health = 100
+        self._health = 120
         Boss.spawned = True
         Boss.bosses.append(self)
         self._halfwidth = 5
