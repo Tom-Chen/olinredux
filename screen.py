@@ -25,16 +25,17 @@ class Screen (object):
         self._cy = cy    #  of the screen
         self._things = []
         # Background is black
-        bg = Rectangle(Point(-20,-20),Point(WINDOW_WIDTH+20,WINDOW_HEIGHT+20))
-        bg.setFill("black")
-        bg.setOutline("black")
-        bg.draw(window)
+        # self._bg = Rectangle(Point(-20,-20),Point(WINDOW_WIDTH+20,WINDOW_HEIGHT+20))
+        # self._bg.setFill("black")
+        # self._bg.setOutline("black")
+        self._bg = Image(Point(TILE_SIZE*self._cx,TILE_SIZE*self._cy),"background.gif")
+        self._bg.draw(window)
         # here, you want to draw the tiles that are visible
         # and possible record them for future manipulation
         # you'll probably want to change this at some point to
         # get scrolling to work right...
         self._onscreen = []
-        self.firstDraw()
+        # self.firstDraw()
 
     def color(self,elt,currentTile):
         if currentTile == 0:

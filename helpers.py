@@ -24,6 +24,7 @@ def offscreen_right (x, center):
 
 def scrolling (cx,cy):
     return (in_level(cx + VIEWPORT_WIDTH, cy))
+
 MOVE = {
     'Left': (-1,0),
     'Right': (1,0),
@@ -40,7 +41,7 @@ WEAPON = {
 # GLOBAL VARIABLES
 
 # Tile size of the level
-LEVEL_WIDTH = 201
+LEVEL_WIDTH = 401
 LEVEL_HEIGHT = 21
 
 # Tile size of the viewport (through which you view the level)

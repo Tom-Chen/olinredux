@@ -4,17 +4,12 @@ from helpers import *
 
 class Projectile (MobileThing):
     projectiles = []
-    def __init__ (self,x,y,splash,side,speedx):
+    def __init__ (self,x,y,splash,damage,side,speedx,sprite):
         MobileThing.__init__(self)
-        # log("hostile.__init__ for "+str(self))
-        rect = Rectangle(Point(1,1),
-                         Point(TILE_SIZE-1,TILE_SIZE-1))
-        rect.setFill("yellow")
-        rect.setOutline("yellow")
-        self._sprite = rect
+        self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),sprite)
         self._x = x
         self._y = y
-        self._damage = 1
+        self._damage = damage
         self._speedx = speedx
         self._speedy = 0
         self._side = side

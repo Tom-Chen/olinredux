@@ -12,11 +12,7 @@ class Hostile (MobileThing):
     def __init__ (self):
         MobileThing.__init__(self)
         # log("hostile.__init__ for "+str(self))
-        rect = Rectangle(Point(1,1),
-                         Point(TILE_SIZE-1,TILE_SIZE-1))
-        rect.setFill("red")
-        rect.setOutline("red")
-        self._sprite = rect
+        self._sprite = Image(Point(TILE_SIZE/2,TILE_SIZE/2),'enemy.gif')
         self._charging = False
         self._health = 1
         Hostile.hostiles.append(self)
@@ -28,9 +24,11 @@ class Hostile (MobileThing):
             self.die()
 
     def die(self):
-        log("Enemy Killed!")
         self._sprite.undraw()
         Hostile.hostiles.remove(self)
+        
+    def is_boss(self):
+        return False
         
     # this gets called from event queue when the time is right
     
