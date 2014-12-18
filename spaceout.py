@@ -13,7 +13,6 @@ from mobilething import *
 from player import *
 from hostile import *
 from projectile import *
-from level import *
 from screen import *
 from eventqueue import *
 from helpers import *
@@ -413,10 +412,7 @@ def main ():
                       WINDOW_WIDTH + WINDOW_RIGHTPANEL, WINDOW_HEIGHT,
                       autoflush=False)
 
-    level = Level()
-    log ("level created")
-
-    scr = Screen(level,window,10,10)
+    scr = Screen(window,10,10)
     log ("screen created")
     
     create_panel(window);
