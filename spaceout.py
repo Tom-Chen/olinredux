@@ -336,18 +336,22 @@ class BossAct(object):
                 if 10 <= firepattern <= 11:
                     Projectile(int(frontedge),topcannon,False,1,"Enemy",-1,"bossshot.gif").materialize(self._screen,int(frontedge),topcannon)
 
-                movement = random.randint(0,6)
-                if 0 <= movement <= 3 and in_level(self._boss._x, topedge)and in_level(self._boss._x, bottomedge):
-                    if(self._boss._y > self._player._y):
-                        self._boss.move(0,-0.5)
-                    elif(self._boss._y < self._player._y):
-                        self._boss.move(0,0.5)
-                elif (movement == 4) and in_level(self._boss._x, bottomedge):
-                    self._boss.move(0,0.5)
-                elif (movement == 5) and in_level(self._boss._x, topedge):
+                # movement = random.randint(0,6)
+                # if 0 <= movement <= 3 and in_level(self._boss._x, topedge)and in_level(self._boss._x, bottomedge):
+                    # if(self._boss._y > self._player._y):
+                        # self._boss.move(0,-0.5)
+                    # elif(self._boss._y < self._player._y):
+                        # self._boss.move(0,0.5)
+                # elif (movement == 4) and in_level(self._boss._x, bottomedge):
+                    # self._boss.move(0,0.5)
+                # elif (movement == 5) and in_level(self._boss._x, topedge):
+                    # self._boss.move(0,-0.5)
+                # elif movement == 6:
+                    # self._boss._lastmove = 0
+                if(self._boss._y > self._player._y):
                     self._boss.move(0,-0.5)
-                elif movement == 6:
-                    self._boss._lastmove = 0
+                elif(self._boss._y < self._player._y):
+                    self._boss.move(0,0.5)
                 q.enqueue(30,self)
             elif(Boss.dead == True): # Victory explosion!
                 self._player._invulnerable = True
