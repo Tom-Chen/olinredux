@@ -173,7 +173,7 @@ class MoveProjectiles (object):
               projectile._sprite.move(projectile._speedx * 2 * TILE_SIZE,0)
               if(offscreen_left(projectile._x, self._screen._cx)):
                   projectile.die()
-              if((projectile._x, projectile._y) == (self._player._x, self._player._y)):
+              if((projectile._x, projectile._y) == (self._player._x, self._player._y)) or ((projectile._x, projectile._y) == (self._player._x+1, self._player._y)): # make it a bit harder
                   self._player.take_damage(q,1)
                   explosion = Explosion(self._player._x, self._player._y).materialize(self._screen,self._player._x, self._player._y)
                   q.enqueue(2,UpdateExplosions(self._screen,self._window,explosion))
@@ -423,7 +423,6 @@ def main ():
     h = HealthBar().materialize(scr,0,0)
     w = WeaponSelect().materialize(scr,0,0)
     q.enqueue(2,CheckInput(window,p,scr,w))
-    # q.enqueue(2,VictoryExplosions(window,scr,1))
     q.enqueue(10,ScrollForward(window,p,scr,h))
     q.enqueue(5,MoveProjectiles(window,p,scr,h))
     q.enqueue(10,CheckPosition(window,p,scr,h))
